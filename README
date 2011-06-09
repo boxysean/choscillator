@@ -1,0 +1,10 @@
+This work expands the work done here:
+
+http://frontiernerds.com/brain-hack
+https://github.com/kitschpatrol/Processing-Brain-Grapher
+
+Key changes:
+
+- Made the code Java-based rather than Processing-based
+- Listener interface to easily add new applications
+- Treats existing brain grapher as an applet window for debugging
