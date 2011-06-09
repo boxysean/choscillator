@@ -1,11 +1,13 @@
 package dev.boxy.choscillator.brain;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import processing.core.PApplet;
 import processing.core.PGraphics;
 import processing.serial.Serial;
 import controlP5.ControlFont;
 import controlP5.ControlP5;
-import controlP5.ControlWindow;
 
 public class BrainGrapher extends PApplet {
 
@@ -22,6 +24,8 @@ public class BrainGrapher extends PApplet {
 	int globalMax;
 	String scaleMode;
 	
+	List<BrainGrapherListener> listeners = new LinkedList<BrainGrapherListener>();
+	
 	int width;
 	int height;
 	
@@ -29,10 +33,10 @@ public class BrainGrapher extends PApplet {
 		this.width = width;
 		this.height = height;
 	}
-
-//	public BrainGrapher(PApplet applet) {
-//		this.applet = applet;
-//	}
+	
+	public void addListener(BrainGrapherListener listener) {
+		listeners.add(listener);
+	}
 	
 	public void setup() {
 		size(width, height);
@@ -64,8 +68,7 @@ public class BrainGrapher extends PApplet {
 		channels[0] = new Channel("Signal Quality", color(0), "");
 		channels[1] = new Channel("Attention", color(100), "");
 		channels[2] = new Channel("Meditation", color(50), "");
-		channels[3] = new Channel("Delta", color(219, 211, 42),
-				"Dreamless Sleep");
+		channels[3] = new Channel("Delta", color(219, 211, 42), "Dreamless Sleep");
 		channels[4] = new Channel("Theta", color(245, 80, 71), "Drowsy");
 		channels[5] = new Channel("Low Alpha", color(237, 0, 119), "Relaxed");
 		channels[6] = new Channel("High Alpha", color(212, 0, 149), "Relaxed");
@@ -152,6 +155,12 @@ public class BrainGrapher extends PApplet {
 						newValue = 0;
 
 					channels[i].addDataPoint(newValue);
+				}
+				
+				// Update listeners
+				
+				for (BrainGrapherListener listener : listeners) {
+					listener.onBrainUpdate();
 				}
 			}
 

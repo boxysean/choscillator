@@ -1,8 +1,10 @@
 package dev.boxy.choscillator.brain;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
-class Channel { 
+public class Channel { 
 
 	String name;
 	int drawColor;
@@ -14,15 +16,26 @@ class Channel {
 	ArrayList<Point> points;
 	boolean allowGlobal;
 	int value;
-		
-
-
+	
+	protected static Map<String, Channel> channelMap = new HashMap<String, Channel>();
+	
+	/**
+	 * Method for finding values by name
+	 * @param key name of the channel
+	 * @return the channel data
+	 */
+	public static int get(String key) {
+		return channelMap.get(key).value;
+	}
+	
 	Channel(String _name, int _drawColor, String _description) {
 		name = _name;
 		drawColor = _drawColor;
 		description = _description;
 		allowGlobal = true;
 		points = new ArrayList<Point>();
+		
+		channelMap.put(name, this);
 	}
 	
 	
