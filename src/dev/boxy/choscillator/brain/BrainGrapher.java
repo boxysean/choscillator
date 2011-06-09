@@ -29,6 +29,10 @@ public class BrainGrapher extends PApplet {
 	int width;
 	int height;
 	
+	public BrainGrapher() {
+		this(1024, 768);
+	}
+	
 	public BrainGrapher(int width, int height) {
 		this.width = width;
 		this.height = height;
@@ -56,7 +60,8 @@ public class BrainGrapher extends PApplet {
 		// Create each channel
 		
 		try {
-			serial = new Serial(this, Serial.list()[0], 9600);
+			String list[] = Serial.list();
+			serial = new Serial(this, list[0], 9600);
 			serial.bufferUntil(10);
 		} catch (Exception e) {
 			System.err.println("Unable to connect...");
@@ -134,7 +139,7 @@ public class BrainGrapher extends PApplet {
 
 	}
 
-	void serialEvent(Serial p) {
+	public void serialEvent(Serial p) {
 		String[] incomingValues = split(p.readString(), ',');
 
 		println(incomingValues);
