@@ -11,8 +11,9 @@ class Channel {
 	boolean relative;
 	int maxValue;
 	int minValue;
-	ArrayList points;
+	ArrayList<Point> points;
 	boolean allowGlobal;
+	int value;
 		
 
 
@@ -21,13 +22,14 @@ class Channel {
 		drawColor = _drawColor;
 		description = _description;
 		allowGlobal = true;
-		points = new ArrayList();
+		points = new ArrayList<Point>();
 	}
 	
 	
 	void addDataPoint(int value) {
 		
 		long time = System.currentTimeMillis();
+		this.value = value;
 		
 		if(value > maxValue) maxValue = value;
 		if(value < minValue) minValue = value;

@@ -1,6 +1,7 @@
 package dev.boxy.choscillator.brain;
 
 import processing.core.PApplet;
+import processing.core.PGraphics;
 import controlP5.ControlP5;
 import controlP5.Textlabel;
 
@@ -37,23 +38,24 @@ class ConnectionLight {
 		if(latestConnectionValue == 00) currentColor = goodColor;
 	}
 	
-	void draw() {
+	void draw(PGraphics buf) {
 		
 		
-		parent.pushMatrix();
-		parent.translate(x, y);
+		buf.pushMatrix();
+		buf.translate(x, y);
 		
-		parent.noStroke();
-		parent.fill(255, 150);
-		parent.rect(0, 0, 88, 28);
+		buf.noStroke();
+		buf.fill(255, 150);
+		buf.rect(0, 0, 88, 28);
 		
-		parent.noStroke();
-		parent.fill(currentColor);
-		parent.ellipseMode(PApplet.CORNER);
-		parent.ellipse(5, 4, diameter, diameter);
+		buf.noStroke();
+		buf.fill(currentColor);
+		buf.ellipseMode(PApplet.CORNER);
+		buf.ellipse(5, 4, diameter, diameter);
 		
+		// TODO this is probably busted
  		label.draw(parent); 		
- 		parent.popMatrix();
+ 		buf.popMatrix();
 	}
 
 }

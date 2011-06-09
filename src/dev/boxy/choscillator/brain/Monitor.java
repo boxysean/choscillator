@@ -1,8 +1,10 @@
 package dev.boxy.choscillator.brain;
 
 import processing.core.PApplet;
+import processing.core.PGraphics;
 import controlP5.CheckBox;
 import controlP5.ControlP5;
+import controlP5.ControlWindow;
 import controlP5.Textlabel;
 
 class Monitor {
@@ -29,7 +31,7 @@ class Monitor {
 		showGraph.setColorActive(parent.color(0));
 
 		label = new Textlabel(parent, sourceChannel.name, x + 16, y + 16);
-		label.setFont(ControlP5.grixel);
+		label.setFont(controlP5.grixel);
 		label.setColorValue(0);
 
 	}
@@ -38,7 +40,7 @@ class Monitor {
 
 	}
 
-	void draw() {
+	void draw(PGraphics buf) {
 		// this technically only neds to happen on the packet, not every frame
 		if (showGraph.getItem(0).value() == 0) {
 			sourceChannel.graphMe = false;
@@ -46,17 +48,17 @@ class Monitor {
 			sourceChannel.graphMe = true;
 		}
 
-		parent.pushMatrix();
-		parent.translate(x, y);
+		buf.pushMatrix();
+		buf.translate(x, y);
 		// Background
-		parent.noStroke();
-		parent.fill(backgroundColor);
-		parent.rect(0, 0, w, h);
+		buf.noStroke();
+		buf.fill(backgroundColor);
+		buf.rect(0, 0, w, h);
 
 		// border line
-		parent.strokeWeight(1);
-		parent.stroke(220);
-		parent.line(w - 1, 0, w - 1, h);
+		buf.strokeWeight(1);
+		buf.stroke(220);
+		buf.line(w - 1, 0, w - 1, h);
 
 		if (sourceChannel.points.size() > 0) {
 
@@ -74,18 +76,18 @@ class Monitor {
 					+ PApplet.round((float) (targetValue - currentValue) * .08f);
 
 			// Bar
-			parent.noStroke();
-			parent.fill(sourceChannel.drawColor);
-			parent.rect(0, h - currentValue, w, h);
+			buf.noStroke();
+			buf.fill(sourceChannel.drawColor);
+			buf.rect(0, h - currentValue, w, h);
 		}
 
 		// Draw the checkbox matte
 
-		parent.noStroke();
-		parent.fill(255, 150);
-		parent.rect(10, 10, w - 20, 40);
+		buf.noStroke();
+		buf.fill(255, 150);
+		buf.rect(10, 10, w - 20, 40);
 
-		parent.popMatrix();
+		buf.popMatrix();
 
 		label.draw(parent);
 	}

@@ -1,6 +1,7 @@
 package dev.boxy.choscillator.brain;
 
 import processing.core.PApplet;
+import processing.core.PGraphics;
 import controlP5.ControlP5;
 import controlP5.RadioButton;
 import controlP5.Slider;
@@ -62,7 +63,7 @@ class Graph {
 	void update() {
 	}
 
-	void draw() {
+	void draw(PGraphics buf) {
 
 		pixelsPerSecond = PApplet.round(pixelSecondsSlider.value());
 
@@ -101,16 +102,16 @@ class Graph {
 		rightTime = System.currentTimeMillis();
 		leftTime = rightTime - ((w / pixelsPerSecond) * 1000);
 
-		parent.pushMatrix();
-		parent.translate(x, y);
+		buf.pushMatrix();
+		buf.translate(x, y);
 
 		// Background
-		parent.fill(220);
-		parent.rect(0, 0, w, h);
+		buf.fill(220);
+		buf.rect(0, 0, w, h);
 
 		// Draw the background graph
-		parent.strokeWeight(1);
-		parent.stroke(255);
+		buf.strokeWeight(1);
+		buf.stroke(255);
 
 		if (scrollGrid) {
 			// Start from the first whole second and work right
@@ -123,7 +124,7 @@ class Graph {
 		while (gridTime >= leftTime) {
 			int gridX = (int) parent.mapLong(gridTime, leftTime, rightTime, 0L,
 					(long) w);
-			parent.line(gridX, 0, gridX, h);
+			buf.line(gridX, 0, gridX, h);
 			gridTime -= (long) (1000 * gridSeconds);
 		}
 
@@ -131,16 +132,16 @@ class Graph {
 		int gridY = h;
 		while (gridY >= 0) {
 			gridY -= pixelsPerSecond * gridSeconds;
-			parent.line(0, gridY, w, gridY);
+			buf.line(0, gridY, w, gridY);
 		}
 
 		// Draw each channel (pass in as constructor arg?)
 
-		parent.noFill();
+		buf.noFill();
 		if (renderMode.equalsIgnoreCase("Shaded") || renderMode.equalsIgnoreCase("Triangles"))
-			parent.noStroke();
+			buf.noStroke();
 		if (renderMode.equalsIgnoreCase("Curves") || renderMode.equalsIgnoreCase("Lines"))
-			parent.strokeWeight(2);
+			buf.strokeWeight(2);
 
 		for (int i = 0; i < parent.channels.length; i++) {
 			Channel thisChannel = parent.channels[i];
@@ -152,18 +153,18 @@ class Graph {
 					parent.stroke(thisChannel.drawColor);
 
 				if (renderMode.equalsIgnoreCase("Shaded") || renderMode.equalsIgnoreCase("Triangles")) {
-					parent.noStroke();
-					parent.fill(thisChannel.drawColor, 120);
+					buf.noStroke();
+					buf.fill(thisChannel.drawColor, 120);
 				}
 
 				if (renderMode.equalsIgnoreCase("Triangles")) {
-					parent.beginShape(PApplet.TRIANGLES);
+					buf.beginShape(PApplet.TRIANGLES);
 				} else {
-					parent.beginShape();
+					buf.beginShape();
 				}
 
 				if (renderMode.equalsIgnoreCase("Curves") || renderMode.equalsIgnoreCase("Shaded"))
-					parent.vertex(0, h);
+					buf.vertex(0, h);
 
 				for (int j = 0; j < thisChannel.points.size(); j++) {
 					Point thisPoint = (Point) thisChannel.points.get(j);
@@ -190,29 +191,29 @@ class Graph {
 						// ellipse(pointX, pointY, 5, 5);
 
 						if (renderMode.equalsIgnoreCase("Curves")) {
-							parent.curveVertex(pointX, pointY);
+							buf.curveVertex(pointX, pointY);
 						} else {
-							parent.vertex(pointX, pointY);
+							buf.vertex(pointX, pointY);
 						}
 					}
 				}
 			}
 
 			if (renderMode.equalsIgnoreCase("Curves") || renderMode.equalsIgnoreCase("Shaded"))
-				parent.vertex(w, h);
+				buf.vertex(w, h);
 			if (renderMode.equalsIgnoreCase("Lines") || renderMode.equalsIgnoreCase("Curves")
 					|| renderMode.equalsIgnoreCase("Triangles"))
-				parent.endShape();
+				buf.endShape();
 			if (renderMode.equalsIgnoreCase("Shaded"))
-				parent.endShape(PApplet.CLOSE);
+				buf.endShape(PApplet.CLOSE);
 		}
 
-		parent.popMatrix();
+		buf.popMatrix();
 
 		// gui matte
-		parent.noStroke();
-		parent.fill(255, 150);
-		parent.rect(10, 10, 195, 81);
+		buf.noStroke();
+		buf.fill(255, 150);
+		buf.rect(10, 10, 195, 81);
 
 	}
 

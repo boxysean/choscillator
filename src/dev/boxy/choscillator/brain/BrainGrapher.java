@@ -1,9 +1,11 @@
 package dev.boxy.choscillator.brain;
 
 import processing.core.PApplet;
+import processing.core.PGraphics;
 import processing.serial.Serial;
 import controlP5.ControlFont;
 import controlP5.ControlP5;
+import controlP5.ControlWindow;
 
 public class BrainGrapher extends PApplet {
 
@@ -19,13 +21,26 @@ public class BrainGrapher extends PApplet {
 	int packetCount = 0;
 	int globalMax;
 	String scaleMode;
+	
+	int width;
+	int height;
+	
+	public BrainGrapher(int width, int height) {
+		this.width = width;
+		this.height = height;
+	}
 
+//	public BrainGrapher(PApplet applet) {
+//		this.applet = applet;
+//	}
+	
 	public void setup() {
-		size(1024, 768);
+		size(width, height);
 		smooth();
 
 		// Set up the knobs and dials
 		controlP5 = new ControlP5(this);
+		
 		controlP5.setColorLabel(color(0));
 		// controlP5.setColorValue(color(0));
 		controlP5.setColorBackground(color(0));
@@ -35,8 +50,14 @@ public class BrainGrapher extends PApplet {
 		font = new ControlFont(createFont("DIN-MediumAlternate", 12), 12);
 
 		// Create each channel
-		serial = new Serial(this, Serial.list()[0], 9600);
-		serial.bufferUntil(10);
+		
+		try {
+			serial = new Serial(this, Serial.list()[0], 9600);
+			serial.bufferUntil(10);
+		} catch (Exception e) {
+			System.err.println("Unable to connect...");
+			e.printStackTrace();
+		}
 
 		// Creat the channel objects
 		// yellow to purple and then the space in between, grays for the alphas
@@ -83,8 +104,10 @@ public class BrainGrapher extends PApplet {
 
 	public void draw() {
 
+		PGraphics buf = this.g;
+		
 		// find the global max
-		if (scaleMode.equalsIgnoreCase("Global")) {
+		if (scaleMode != null && scaleMode.equalsIgnoreCase("Global")) {
 			if (channels.length > 3) {
 				for (int i = 3; i < channels.length; i++) {
 					if (channels[i].maxValue > globalMax)
@@ -93,17 +116,17 @@ public class BrainGrapher extends PApplet {
 			}
 		}
 
-		background(255);
+		buf.background(255);
 
 		graph.update();
-		graph.draw();
+		graph.draw(buf);
 
 		connectionLight.update();
-		connectionLight.draw();
+		connectionLight.draw(buf);
 
 		for (int i = 0; i < monitors.length; i++) {
 			monitors[i].update();
-			monitors[i].draw();
+			monitors[i].draw(buf);
 		}
 
 	}
