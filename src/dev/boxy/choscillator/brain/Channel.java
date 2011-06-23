@@ -24,11 +24,15 @@ public class Channel {
 	 * @param key name of the channel
 	 * @return the channel data
 	 */
-	public static int get(String key) {
+	public static int getValue(String key) {
 		return channelMap.get(key).value;
 	}
 	
-	Channel(String _name, int _drawColor, String _description) {
+	public static Channel get(String key) {
+		return channelMap.get(key);
+	}
+
+	public Channel(String _name, int _drawColor, String _description) {
 		name = _name;
 		drawColor = _drawColor;
 		description = _description;
@@ -39,7 +43,7 @@ public class Channel {
 	}
 	
 	
-	void addDataPoint(int value) {
+	public void addDataPoint(int value) {
 		
 		long time = System.currentTimeMillis();
 		this.value = value;
@@ -52,13 +56,17 @@ public class Channel {
 		// tk max length handling
 	}
 	
-	Point getLatestPoint() {
+	public Point getLatestPoint() {
 		if(points.size() > 0) {
 			return (Point)points.get(points.size() - 1);
 		}
 		else {
 			return new Point(0, 0);
 		}
+	}
+	
+	public int getLast() {
+		return getLatestPoint().value;
 	}
 
 

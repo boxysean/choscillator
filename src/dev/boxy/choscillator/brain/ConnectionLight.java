@@ -32,7 +32,7 @@ class ConnectionLight {
 	}
 	
 	void update() {
-		latestConnectionValue = parent.channels[0].getLatestPoint().value;
+		latestConnectionValue = parent.signalQualityChannel.getLatestPoint().value;
 		if(latestConnectionValue == 200) currentColor = noColor;
 		if(latestConnectionValue < 200) currentColor = badColor;
 		if(latestConnectionValue == 00) currentColor = goodColor;

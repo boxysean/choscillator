@@ -143,9 +143,7 @@ class Graph {
 		if (renderMode.equalsIgnoreCase("Curves") || renderMode.equalsIgnoreCase("Lines"))
 			buf.strokeWeight(2);
 
-		for (int i = 0; i < parent.channels.length; i++) {
-			Channel thisChannel = parent.channels[i];
-
+		for (Channel thisChannel : parent.channels) {
 			if (thisChannel.graphMe) {
 
 				// Draw the line
@@ -177,7 +175,7 @@ class Graph {
 								rightTime, 0L, (long) w);
 
 						int pointY = 0;
-						if ((parent.scaleMode.equalsIgnoreCase("Global")) && (i > 2)) {
+						if ((parent.scaleMode.equalsIgnoreCase("Global")) && thisChannel.allowGlobal) {
 							pointY = (int) PApplet.map(thisPoint.value, 0, parent.globalMax,
 									h, 0);
 						} else {

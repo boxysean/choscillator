@@ -1,5 +1,6 @@
 package dev.boxy.choscillator.brain;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -16,8 +17,12 @@ public class BrainGrapher extends PApplet {
 
 	Serial serial;
 	int lf = 10; // ASCII linefeed
-	Channel[] channels = new Channel[11];
-	Monitor[] monitors = new Monitor[10];
+	
+	Channel signalQualityChannel;
+	Monitor signalQualityMonitor;
+	
+	List<Channel> channels = new ArrayList<Channel>();
+	List<Monitor> monitors = new ArrayList<Monitor>();
 	Graph graph;
 	ConnectionLight connectionLight;
 	int packetCount = 0;
@@ -25,6 +30,7 @@ public class BrainGrapher extends PApplet {
 	String scaleMode;
 	
 	List<BrainGrapherListener> listeners = new LinkedList<BrainGrapherListener>();
+	List<BrainGrapherCharter> charters = new LinkedList<BrainGrapherCharter>();
 	
 	int width;
 	int height;
@@ -40,6 +46,23 @@ public class BrainGrapher extends PApplet {
 	
 	public void addListener(BrainGrapherListener listener) {
 		listeners.add(listener);
+	}
+	
+	public void addCharter(BrainGrapherCharter charter) {
+		charters.add(charter);
+	}
+	
+	public void buildMonitors() {
+		monitors.clear();
+		
+		for (int i = 0; i < channels.size(); i++) {
+			Channel channel = channels.get(i);
+			
+			monitors.add(new Monitor(channel, i * (width / channels.size()), 
+					height / 2, width / channels.size(), height / 2, this, controlP5));
+		}
+
+		monitors.get(monitors.size()-1).w += width % monitors.size();
 	}
 	
 	public void setup() {
@@ -68,39 +91,42 @@ public class BrainGrapher extends PApplet {
 			e.printStackTrace();
 		}
 
-		// Creat the channel objects
+		// Create the channel objects
 		// yellow to purple and then the space in between, grays for the alphas
-		channels[0] = new Channel("Signal Quality", color(0), "");
-		channels[1] = new Channel("Attention", color(100), "");
-		channels[2] = new Channel("Meditation", color(50), "");
-		channels[3] = new Channel("Delta", color(219, 211, 42), "Dreamless Sleep");
-		channels[4] = new Channel("Theta", color(245, 80, 71), "Drowsy");
-		channels[5] = new Channel("Low Alpha", color(237, 0, 119), "Relaxed");
-		channels[6] = new Channel("High Alpha", color(212, 0, 149), "Relaxed");
-		channels[7] = new Channel("Low Beta", color(158, 18, 188), "Alert");
-		channels[8] = new Channel("High Beta", color(116, 23, 190), "Alert");
-		channels[9] = new Channel("Low Gamma", color(39, 25, 159), "???");
-		channels[10] = new Channel("High Gamma", color(23, 26, 153), "???");
-
-		// Manual override for a couple of limits.
-		channels[0].minValue = 0;
-		channels[0].maxValue = 200;
-		channels[1].minValue = 0;
-		channels[1].maxValue = 100;
-		channels[2].minValue = 0;
-		channels[2].maxValue = 100;
-		channels[0].allowGlobal = false;
-		channels[1].allowGlobal = false;
-		channels[2].allowGlobal = false;
-
-		// Set up the monitors, skip the signal quality
-
-		for (int i = 0; i < monitors.length; i++) {
-			monitors[i] = new Monitor(channels[i + 1], i * (width / 10),
-					height / 2, width / 10, height / 2, this, controlP5);
+		
+		signalQualityChannel = new Channel("Signal Quality", color(0), "");
+		signalQualityChannel.minValue = 0;
+		signalQualityChannel.maxValue = 200;
+		signalQualityChannel.allowGlobal = false;
+		
+		Channel attentionChannel = new Channel("Attention", color(100), "");
+		attentionChannel.minValue = 0;
+		attentionChannel.maxValue = 100;
+		attentionChannel.allowGlobal = false;
+		channels.add(attentionChannel);
+		
+		Channel meditationChannel = new Channel("Meditation", color(50), "");
+		meditationChannel.minValue = 0;
+		meditationChannel.maxValue = 100;
+		meditationChannel.allowGlobal = false;
+		channels.add(meditationChannel);
+		
+		channels.add(new Channel("Delta", color(219, 211, 42), "Dreamless Sleep"));
+		channels.add(new Channel("Theta", color(245, 80, 71), "Drowsy"));
+		channels.add(new Channel("Low Alpha", color(237, 0, 119), "Relaxed"));
+		channels.add(new Channel("High Alpha", color(212, 0, 149), "Relaxed"));
+		channels.add(new Channel("Low Beta", color(158, 18, 188), "Alert"));
+		channels.add(new Channel("High Beta", color(116, 23, 190), "Alert"));
+		channels.add(new Channel("Low Gamma", color(39, 25, 159), "???"));
+		channels.add(new Channel("High Gamma", color(23, 26, 153), "???"));
+		
+		// Add external channels
+		
+		for (BrainGrapherCharter charter : charters) {
+			channels.addAll(charter.addBrainGraphChannels());
 		}
 
-		monitors[monitors.length - 1].w += width % monitors.length;
+		buildMonitors();
 
 		// Set up the graph
 		graph = new Graph(0, 0, width, height / 2, this, controlP5);
@@ -116,10 +142,9 @@ public class BrainGrapher extends PApplet {
 		
 		// find the global max
 		if (scaleMode != null && scaleMode.equalsIgnoreCase("Global")) {
-			if (channels.length > 3) {
-				for (int i = 3; i < channels.length; i++) {
-					if (channels[i].maxValue > globalMax)
-						globalMax = channels[i].maxValue;
+			for (Channel channel : channels) {
+				if (channel.allowGlobal && channel.maxValue > globalMax) {
+					globalMax = channel.maxValue;
 				}
 			}
 		}
@@ -132,9 +157,9 @@ public class BrainGrapher extends PApplet {
 		connectionLight.update();
 		connectionLight.draw(buf);
 
-		for (int i = 0; i < monitors.length; i++) {
-			monitors[i].update();
-			monitors[i].draw(buf);
+		for (Monitor monitor : monitors) {
+			monitor.update();
+			monitor.draw(buf);
 		}
 
 	}
@@ -142,7 +167,7 @@ public class BrainGrapher extends PApplet {
 	public void serialEvent(Serial p) {
 		String[] incomingValues = split(p.readString(), ',');
 
-		println(incomingValues);
+//		println(incomingValues);
 
 		// Add the data to the logs
 		if (incomingValues.length > 1) {
@@ -151,15 +176,24 @@ public class BrainGrapher extends PApplet {
 			// Wait till the third packet or so to start recording to avoid
 			// initialization garbage.
 			if (packetCount > 3) {
-				for (int i = 0; i < incomingValues.length; i++) {
+				signalQualityChannel.addDataPoint(Integer.parseInt(incomingValues[0].trim()));
+				
+				for (int i = 1, j = 0; i < incomingValues.length; i++, j++) {
 					int newValue = Integer.parseInt(incomingValues[i].trim());
 
 					// Zero the EEG power values if we don't have a signal.
 					// Can be useful to leave them in for development.
-					if ((Integer.parseInt(incomingValues[0]) == 200) && (i > 2))
+					if ((Integer.parseInt(incomingValues[0]) == 200) && (i > 2)) {
 						newValue = 0;
+					}
 
-					channels[i].addDataPoint(newValue);
+					channels.get(j).addDataPoint(newValue);
+				}
+				
+				// Do some work on the artificial channels
+				
+				for (BrainGrapherCharter charter : charters) {
+					charter.updateBrainGraphChannels();
 				}
 				
 				// Update listeners
