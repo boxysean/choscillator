@@ -23,62 +23,29 @@ public class ChoscillatorGraphics {
 	double nextP = 0.0;
 	int frames = 0;
 
-	int transitionFrames = 0;
-	boolean inTransition = false;
-	boolean transitionUp = false;
-
 	float bandColours[] = new float[BANDS];
 
 	Choscillator chos;
-	
-	List<TransitionListener> transitionListeners = new ArrayList<TransitionListener>();
+	TransitionManager trans;
 	
 	double pos;
 	boolean transitionNext = false;
 	int transitionNextFrames = 0;
 	
-	public ChoscillatorGraphics(Choscillator choscillator) {
+	public ChoscillatorGraphics(Choscillator choscillator, TransitionManager transitionManager) {
 		chos = choscillator;
-		transitionListeners.add(chos);
+		trans = transitionManager;
 	}
 
 	void setup() {
 		chos.size(1024, 768);
 		chos.noStroke();
 		chos.frameRate(30);
+		chos.noCursor();
 	}
 
 	void draw() {
-//		if (transitionNext && transitionNextFrames == 0) {
-//			transitionNextFrames = 30;
-//		}
-		
-		if (transitionNext /*&& --transitionNextFrames == 0*/) {
-			transitionUp = !transitionUp;
-			inTransition = true;
-			transitionNext = false;
-		}
-		
-		if (inTransition) {
-			if (transitionFrames == TRANSITION_FRAMES / 2) {
-				state = 1 - state;
-				for (TransitionListener listener : transitionListeners) {
-					listener.onTransition(state == 0);
-				}
-			}
-
-			if (transitionUp) {
-				if (++transitionFrames == TRANSITION_FRAMES) {
-					inTransition = false;
-				}
-			} else {
-				if (--transitionFrames == 0) {
-					inTransition = false;
-				}
-			}
-		}
-
-		if (chos.frameCount % 30 == 0 && !inTransition) {
+		if (pos != nextP) {
 			nextP = pos;
 			frames = 0;
 		}
@@ -93,38 +60,19 @@ public class ChoscillatorGraphics {
 		double l = Math.sin((frames / 30.0) * PApplet.PI / smoothing);
 
 		currP = nextP * l + currP * (1 - l);
-
-		float transition = (float) transitionFrames / TRANSITION_FRAMES;
+		
+		int transitionFrame = trans.getTransitionFrame();
+		float transition = (float) transitionFrame / TRANSITION_FRAMES;
 		float transitionColour = transition * 255;
 
-		if (transitionFrames < TRANSITION_FRAMES / 2) {
-			chos.background(transitionColour);
-			drawSquare(currP, transitionColour, false);
-
-//			if (currP < 0.05 && !inTransition) {
-//				transitionUp = true;
-//				inTransition = true;
-//			}
-		} else if (transitionFrames >= TRANSITION_FRAMES / 2) {
-			chos.background(transitionColour);
-			drawSquare(currP, transitionColour, true);
-
-//			if (currP >= 0.95 && !inTransition) {
-//				transitionUp = false;
-//				inTransition = true;
-//			}
-		}
+		chos.background(transitionColour);
+		drawSquare(currP, transitionColour, !trans.isRelaxedState());
 	}
 	
 	void drawSquare(double p, double colour, boolean forward) {
 		double l = 0;
 
-		// if (forward) {
 		l = p * MAX_SIZE + (1 - p) * MIN_SIZE;
-		// } else {
-		// l = p * MAX_SIZE + (1 - p) * MIN_SIZE;
-		// }
-
 		int b = BANDS;
 
 		double x = (chos.width - l) / 2.0;
@@ -133,7 +81,6 @@ public class ChoscillatorGraphics {
 		double mpColour = (colour + 128) / 2.0;
 		mpColour = 255 - colour;
 
-		// float bandWidth = BANDWIDTH * p;
 		float bandWidth = BANDWIDTH;
 
 		int fc = chos.frameCount % ((int) (b * BAND_SPEED) + BAND_SPEED_DELAY);
@@ -163,13 +110,6 @@ public class ChoscillatorGraphics {
 			double ll = l + 2 * bandWidth * i;
 
 			chos.rect((float) xx, (float) yy, (float) ll, (float) ll);
-		}
-	}
-	
-	public void transition() {
-		if (!inTransition) {
-			System.out.println("TRANSITION");
-			transitionNext = true;
 		}
 	}
 	

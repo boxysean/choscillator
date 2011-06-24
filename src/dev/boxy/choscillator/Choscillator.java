@@ -1,17 +1,13 @@
 package dev.boxy.choscillator;
 
-import java.awt.Frame;
-import java.awt.event.KeyEvent;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
 import java.util.List;
 
-import processing.core.PApplet;
-import controlP5.ControlP5;
-import dev.boxy.choscillator.brain.BrainGrapher;
-import dev.boxy.choscillator.brain.BrainGrapherCharter;
-import dev.boxy.choscillator.brain.BrainGrapherListener;
-import dev.boxy.choscillator.brain.Channel;
+import processing.core.*;
+import controlP5.*;
+import dev.boxy.choscillator.brain.*;
 
 public class Choscillator extends PApplet implements BrainGrapherListener,
 		BrainGrapherCharter, TransitionListener {
@@ -26,19 +22,19 @@ public class Choscillator extends PApplet implements BrainGrapherListener,
 	// "High Gamma",
 	};
 
-	// static final float BIAS = 0.95f;
-	static final int SCORE = 10;
+	static final int RESET_UPDATES = 5;
+	
+	static final int SCORE = 15;
+	
+	static final int CALLIBRATION_ROUNDS = 30;
+//	static final int CALLIBRATION_ROUNDS = 4;
 
 	ControlP5 controlP5;
 	int colour = 100;
 
 	BrainGrapher brainGrapher;
-	ChoscillatorGraphics graphics = new ChoscillatorGraphics(this);
-
-	// Memory lowAlphaMemExp = new Memory(BIAS);
-	// Memory highAlphaMemExp = new Memory(BIAS);
-	// Memory lowBetaMemExp = new Memory(BIAS);
-	// Memory highBetaMemExp = new Memory(BIAS);
+	TransitionManager trans = new TransitionManager();
+	ChoscillatorGraphics graphics = new ChoscillatorGraphics(this, trans);
 
 	PhraseManager phrases = new PhraseManager(this);
 
@@ -53,18 +49,15 @@ public class Choscillator extends PApplet implements BrainGrapherListener,
 	int attentiveCount = 0;
 	int totalCount = 0;
 
-	boolean relaxedState = false;
-	boolean knownState = false;
-
 	boolean connectionLost = false;
 	boolean lastPaused = false;
 	boolean paused = false;
 	boolean reset = false;
+	int resetFrames = 0;
+	
 	boolean callibration = false;
 	int callibrationFrame = 0;
 	
-	static final int CALLIBRATION_ROUNDS = 20;
-
 	public void setup() {
 		graphics.setup();
 
@@ -77,6 +70,8 @@ public class Choscillator extends PApplet implements BrainGrapherListener,
 		PFrame pframe = new PFrame(brainGrapher);
 		pframe.setVisible(true);
 		
+		trans.addListener(this);
+		
 		reset();
 	}
 
@@ -88,69 +83,32 @@ public class Choscillator extends PApplet implements BrainGrapherListener,
 				rect(0, 0, width, height);
 			}
 		} else {
+			trans.transition();
 			graphics.draw();
 			phrases.draw();
 		}
 	}
 
 	public static void main(String args[]) {
-		PApplet.main(new String[] { "--present",
-				"dev.boxy.choscillator.Choscillator" });
-		// PApplet.main(new String[] { "dev.boxy.choscillator.Choscillator" });
+		PApplet.main(new String[] { "--present", "dev.boxy.choscillator.Choscillator" });
+//		PApplet.main(new String[] { "dev.boxy.choscillator.Choscillator" });
 	}
 
-	@Override
+//	@Override
 	public void keyTyped(KeyEvent e) {
-		// switch (e.getKeyChar()) {
-		// case 'a':
-		// if (!recordRelaxed) {
-		// if (recordAttentive) {
-		// recordAttentive = false;
-		// // Average out the values
-		// for (int i = 0; i < CHANNELS.length; i++) {
-		// attentiveVector[i] /= recordSteps;
-		// }
-		//
-		// System.out.println("done recording attentive");
-		// } else {
-		// recordSteps = 0;
-		// attentiveVector = new double[CHANNELS.length];
-		// recordAttentive = true;
-		//
-		// System.out.println("start recording attentive");
-		// }
-		// }
-		//
-		// break;
-		//
-		// case 'r':
-		// if (!recordAttentive) {
-		// if (recordRelaxed) {
-		// recordRelaxed = false;
-		// // Average out the values
-		// for (int i = 0; i < CHANNELS.length; i++) {
-		// relaxedVector[i] /= recordSteps;
-		// }
-		//
-		// System.out.println("done recording relaxed");
-		// } else {
-		// recordSteps = 0;
-		// relaxedVector = new double[CHANNELS.length];
-		// recordRelaxed = true;
-		//
-		// System.out.println("start recording relaxed");
-		// }
-		// }
-		// }
+
 	}
 
-	@Override
+//	@Override
 	public void onBrainUpdate() {
-
 		if (reset) {
 			reset();
 		}
-
+		
+		if (trans.inTransition()) {
+			return;
+		}
+		
 		// DEBUG
 
 		String s = "";
@@ -163,44 +121,47 @@ public class Choscillator extends PApplet implements BrainGrapherListener,
 
 		// System.out.println(s);
 
-		if (knownState) {
-			boolean okay = true;
+		boolean okay = true;
 
+		for (int i = 0; i < CHANNELS.length; i++) {
+			String channel = CHANNELS[i];
+			int val = Channel.getValue(channel);
+			if (val == 0) {
+				okay = false;
+				break;
+			}
+		}
+
+		boolean relaxedState = trans.isRelaxedState();
+		
+		if (okay) {
 			for (int i = 0; i < CHANNELS.length; i++) {
 				String channel = CHANNELS[i];
 				int val = Channel.getValue(channel);
-				if (val == 0) {
-					okay = false;
-					break;
+				
+				if (relaxedState) {
+					relaxedVector[i] += value(val);
+				} else {
+					attentiveVector[i] += value(val);
 				}
 			}
 
-			if (okay) {
-				for (int i = 0; i < CHANNELS.length; i++) {
-					String channel = CHANNELS[i];
-					int val = Channel.getValue(channel);
-					if (relaxedState) {
-						relaxedVector[i] += value(val);
-					} else {
-						attentiveVector[i] += value(val);
-					}
-				}
-
-				if (relaxedState) {
-					relaxedVectorRecords++;
-				} else {
-					attentiveVectorRecords++;
-				}
+			if (relaxedState) {
+				relaxedVectorRecords++;
+			} else {
+				attentiveVectorRecords++;
 			}
 		}
 
 		// Mock the framerate...
 
 		if (callibration && callibrationFrame == CALLIBRATION_ROUNDS / 2) {
-			graphics.transition();
+			trans.startTransition();
 		} else if (callibration && callibrationFrame == CALLIBRATION_ROUNDS) {
 			callibration = false;
-			graphics.transition();
+			totalCount = 0;
+			attentiveCount = 0;
+			trans.startTransition();
 		}
 		
 		if (callibration) {
@@ -217,22 +178,27 @@ public class Choscillator extends PApplet implements BrainGrapherListener,
 			double percent = 0;
 			
 			if (totalCount > 0) {
-				System.out.printf("rel %d att %d total %d score %d", totalCount - attentiveCount, attentiveCount, totalCount, SCORE);
+				System.out.printf("rel %d att %d total %d score %d\n", totalCount - attentiveCount, attentiveCount, totalCount, SCORE);
 				
 				if (relaxedState) {
 					percent = (double) (totalCount - attentiveCount) / SCORE;
 					if (totalCount - attentiveCount >= SCORE) {
-						graphics.transition();
+						trans.startTransition();
 					}
 				} else {
 					percent = (double) attentiveCount / SCORE;
 					if (attentiveCount >= SCORE) {
-						graphics.transition();
+						trans.startTransition();
 					}
 					
 					percent = 1.0 - percent;
 				}
-				
+			} else {
+				if (relaxedState) {
+					percent = 1.0;
+				} else {
+					percent = 0;
+				}
 			}
 			
 			graphics.setPos(percent);
@@ -256,39 +222,15 @@ public class Choscillator extends PApplet implements BrainGrapherListener,
 		return Math.abs(A - B);
 	}
 
-	@Override
+//	@Override
 	public List<Channel> addBrainGraphChannels() {
 		List<Channel> channels = new ArrayList<Channel>();
-
-		// channels.add(new Channel("Low Alpha Smooth", color(33, 36, 163),
-		// "Relaxed, smooth"));
-		// channels.add(new Channel("Alpha vs Beta", color(43, 46, 173),
-		// "Alpha vs Beta"));
 		channels.add(new Channel("Vector", color(173, 0, 173), "Vector"));
-
 		return channels;
 	}
 
-	@Override
+//	@Override
 	public void updateBrainGraphChannels() {
-		// float lowAlphaSmoothBias = 0.7f;
-		// float lowAlphaSmooth = Channel.getValue("Low Alpha Smooth");
-		// float lowAlpha = Channel.getValue("Low Alpha");
-		// float newLowAlphaSmooth = lowAlphaSmooth * lowAlphaSmoothBias +
-		// lowAlpha * (1.0f - lowAlphaSmoothBias);
-		// Channel.get("Low Alpha Smooth").addDataPoint((int)
-		// newLowAlphaSmooth);
-		//
-		// float alphaVsBetaBias = 0.7f;
-		// float alphaVsBeta = Channel.getValue("Alpha vs Beta");
-		// float alphaSum = Channel.getValue("Low Alpha") +
-		// Channel.getValue("High Alpha");
-		// float betaSum = Channel.getValue("Low Beta") +
-		// Channel.getValue("High Beta");
-		// float newAlphaVsBeta = alphaVsBeta * alphaVsBetaBias + (alphaSum >
-		// betaSum ? 10000 : 0) * (1 - alphaVsBetaBias);
-		// Channel.get("Alpha vs Beta").addDataPoint((int) newAlphaVsBeta);
-
 		// If we've recorded the state, then start doing distance calculations
 		// So: attentive means higher score
 
@@ -306,8 +248,7 @@ public class Choscillator extends PApplet implements BrainGrapherListener,
 				if (val != 0) {
 					double channelVal = value(val);
 
-					double attentiveVal = attentiveVector[i]
-							/ attentiveVectorRecords;
+					double attentiveVal = attentiveVector[i] / attentiveVectorRecords;
 					double relaxedVal = relaxedVector[i] / relaxedVectorRecords;
 
 					attentiveDist += dist(attentiveVal, channelVal);
@@ -321,25 +262,25 @@ public class Choscillator extends PApplet implements BrainGrapherListener,
 
 			totalCount++;
 
+			boolean relaxedState = trans.isRelaxedState();
+
 			System.out.printf("[state %s] attentive %3.2f - %3.2f relaxed, %10s wins! (is less) a %4d / %4d t\n",
 							relaxedState ? "relaxed" : "attentive",
 							attentiveDist, relaxedDist,
 							attentiveDist > relaxedDist ? "relaxed"
 									: "attentive", attentiveCount, totalCount);
 
-			if (knownState) {
-				Channel vectorChannel = Channel.get("Vector");
-				float vectorVal;
+			Channel vectorChannel = Channel.get("Vector");
+			float vectorVal;
 
-				if (relaxedState) {
-					vectorVal = (1 - (float) (totalCount - attentiveCount)
-							/ SCORE) * 10000;
-				} else {
-					vectorVal = (float) attentiveCount / SCORE * 10000;
-				}
-
-				vectorChannel.addDataPoint((int) vectorVal);
+			if (relaxedState) {
+				vectorVal = (1 - (float) (totalCount - attentiveCount)
+						/ SCORE) * 10000;
+			} else {
+				vectorVal = (float) attentiveCount / SCORE * 10000;
 			}
+
+			vectorChannel.addDataPoint((int) vectorVal);
 		}
 
 		// Data to plot...
@@ -357,8 +298,11 @@ public class Choscillator extends PApplet implements BrainGrapherListener,
 		if (sigQual == 200) {
 			paused = true;
 		} else if (paused && sigQual != 200) {
-			paused = false;
-			reset = true;
+			if (++resetFrames == RESET_UPDATES) {
+				paused = false;
+				reset = true;
+				resetFrames = 0;
+			}
 		}
 
 		// System.out.println(s);
@@ -369,31 +313,29 @@ public class Choscillator extends PApplet implements BrainGrapherListener,
 		totalCount = 0;
 		Arrays.fill(relaxedVector, 0);
 		Arrays.fill(attentiveVector, 0);
+		relaxedVectorRecords = 0;
+		attentiveVectorRecords = 0;
 		graphics.setPosHard(0);
 		reset = false;
 		callibration = true;
 		callibrationFrame = 0;
-		graphics = new ChoscillatorGraphics(this);
+		trans = new TransitionManager();
+		trans.addListener(this);
+		graphics = new ChoscillatorGraphics(this, trans);
+		resetFrames = 0;
 	}
 
-	@Override
+//	@Override
 	public void onTransition(boolean relaxedState) {
 		String stateName = "";
 		String otherStateName = "";
 
-		this.relaxedState = relaxedState;
-		this.knownState = true;
-
 		if (relaxedState) {
 			stateName = "relaxed  ";
 			otherStateName = "attentive";
-
-//			phrases.add("blue");
 		} else {
 			stateName = "attentive";
 			otherStateName = "relaxed  ";
-
-//			phrases.add("green");
 		}
 
 		// System.out.printf("[state %s] %s finished, %.2f attentive\n",
@@ -404,23 +346,6 @@ public class Choscillator extends PApplet implements BrainGrapherListener,
 	}
 
 }
-
-// class Memory {
-// float bias;
-// float value;
-//
-// public Memory(float bias) {
-// this.bias = bias;
-// }
-//
-// public void add(float x) {
-// value = ((1.0f - bias) * value) + (bias * x);
-// }
-//
-// public float get() {
-// return value;
-// }
-// }
 
 class PFrame extends Frame {
 	public PFrame(PApplet papplet) {
