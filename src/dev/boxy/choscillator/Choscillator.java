@@ -17,9 +17,12 @@ public class Choscillator extends PApplet implements BrainGrapherListener,
 			// "Meditation",
 			// "Delta",
 			// "Theta",
-			"Low Alpha", "High Alpha", "Low Beta", "High Beta",
-	// "Low Gamma",
-	// "High Gamma",
+			"Low Alpha",
+			"High Alpha",
+			"Low Beta",
+			"High Beta",
+			// "Low Gamma",
+			// "High Gamma",
 	};
 
 	static final int RESET_UPDATES = 5;
@@ -27,7 +30,6 @@ public class Choscillator extends PApplet implements BrainGrapherListener,
 	static final int SCORE = 15;
 	
 	static final int CALLIBRATION_ROUNDS = 30;
-//	static final int CALLIBRATION_ROUNDS = 4;
 
 	ControlP5 controlP5;
 	int colour = 100;
@@ -35,8 +37,6 @@ public class Choscillator extends PApplet implements BrainGrapherListener,
 	BrainGrapher brainGrapher;
 	TransitionManager trans = new TransitionManager();
 	ChoscillatorGraphics graphics = new ChoscillatorGraphics(this, trans);
-
-	PhraseManager phrases = new PhraseManager(this);
 
 	// recording areas
 
@@ -85,7 +85,6 @@ public class Choscillator extends PApplet implements BrainGrapherListener,
 		} else {
 			trans.transition();
 			graphics.draw();
-			phrases.draw();
 		}
 	}
 
